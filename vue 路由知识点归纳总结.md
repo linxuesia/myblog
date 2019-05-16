@@ -81,8 +81,41 @@ router.beforeEach(to, from, next){
 }
 ```
 
-### 微信开发，单页应用 页面 url 导致的传参或者跳转失败的问题
-在做微信授权的时候
+### 微信开发，单页应用页面 url 导致的传参或者跳转失败的问题
+
+#### 微信授权跳转
+在做微信授权跳转的时候，hash 模式下链接里面带有 # 号可能会导致重定向跳转失败，使用 encodeURIComponent 把页面地址处理之后，再传入。
+```
+let _url = encodeURIComponent(location.href)
+location.href = `https://open.weixin.qq.com/connect/oauth2/authorize?appid=${this.appid}&redirect_uri=${_url}&response_type=code&scope=snsapi_base&state=#wechat_redirect`
+```
+
+#### 获取 wxconfig 配置
+前端获取 wxconfig 比较简单，主要的操作都在后端，前端只需要传一个 url 参数，由后端去获取 config 的参数，回传给前端。前端拿到参数后，调用 `wx.config` 方法。
+```
+let url = location.href.split('#')[0]
+http.get('weixin/config',{
+    params:{
+        url: encodeURIComponent(url)
+    }
+})
+.then(res=>{
+    wx.config({
+        beta: true,        // 必须这么写，否则wx.invoke调用形式的jsapi会有问题
+        debug: false,                       // 开启调试模式,调用的所有api的返回值会在客户端alert出来，若要查看传入的参数，可以在pc端打开，参数信息会通过log打出，仅在pc端时才会打印。
+        appId: res.data.appId,           // 必填，企业微信的corpID
+        timestamp: res.data.timestamp,  // 必填，生成签名的时间戳
+        nonceStr: res.data.nonceStr,   // 必填，生成签名的随机串
+        signature: res.data.signature,// 必填，签名，见 附录-JS-SDK使用权限签名算法
+        jsApiList: ['scanQRCode'] // 必填，需要使用的JS接口列表，凡是要调用的接口都需要传进来
+    })
+    // 检测微信
+    wx.error(function(res){
+        //  config信息验证失败会执行error函数，如签名过期导致验证失败，具体错误信息可以打开config的debug模式查看，也可以在返回的res参数中查看，对于SPA可以在这里更新签名。
+        console.log('错误信息====',res)
+    })
+})
+```
 
 
 ### 单页面应用加百度统计
