@@ -9,4 +9,3 @@
 * `git checkout -b linxue1022`           
 * `git push origin linxue1022 `           
 * `git branch -u origin/linxue1022`        
-
